@@ -1,4 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'orders.dart';
+import 'sign_up_page.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -7,8 +11,49 @@ class SignInPage extends StatefulWidget {
 }
 
 class SignInPageState extends State<SignInPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  void toggleSignIn() async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          email: _emailController.text, password: _passwordController.text);
+
+      if (userCredential.user != null) {
+        // Navigate to the orders page
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => OrdersPage()));
+        }
+      }
+    } catch (e) {
+      String message;
+
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'invalid-credential':
+            message = 'Invalid Credential';
+            break;
+          case 'invalid-email':
+            message = 'Invalid email';
+            break;
+          case 'wrong-password':
+            message = 'Wrong password';
+            break;
+          default:
+            message = 'An error occurred. Please try again.';
+        }
+      } else {
+        message = 'An error occurred: $e';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Center(child: Text(message))));
+      }
+    }
+  }
 
   @override
   /*
@@ -41,7 +86,21 @@ class SignInPageState extends State<SignInPage> {
             ),
           ),
           SizedBox(height: 20),
-          ElevatedButton(onPressed: () {}, child: Text('Sign In'))
+          ElevatedButton(onPressed: toggleSignIn, child: Text('Sign In')),
+          SizedBox(height: 20),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SignUpPage(),
+                ),
+              );
+            },
+            child: Text('Don\'t have an account? Sign up',
+                style: TextStyle(
+                    color: Colors.purple,
+                    decoration: TextDecoration.underline)),
+          )
         ]),
       ),
     );

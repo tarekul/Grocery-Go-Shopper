@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "158178643894",
+    "firebase_url": "https://grocery-go-backend-default-rtdb.firebaseio.com",
+    "project_id": "grocery-go-backend",
+    "storage_bucket": "grocery-go-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:158178643894:android:59774258b5a30633b43b17",
+        "android_client_info": {
+          "package_name": "com.example.grocery_go_shopper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGqFRWYkxme7Q0U_l3nn1pAKIG76zrTxU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

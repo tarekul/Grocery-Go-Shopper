@@ -29,7 +29,32 @@ class SignUpPageState extends State<SignUpPage> {
               MaterialPageRoute(builder: (context) => OrdersPage()));
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      String message;
+
+      if (e is FirebaseAuthException) {
+        print(e.code);
+        print(e);
+        switch (e.code) {
+          case 'weak-password':
+            message =
+                'The password provided is too weak. Password should be at least 6 characters';
+            break;
+          case 'email-already-in-use':
+            message = 'The account already exists for that email.';
+            break;
+          default:
+            message = 'An error occurred. Please try again.';
+        }
+      } else {
+        message = 'An error occurred: $e';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Center(child: Text(message))));
+      }
+    }
   }
 
   @override
@@ -57,17 +82,17 @@ class SignUpPageState extends State<SignUpPage> {
             ),
           ),
           SizedBox(height: 20),
-          ElevatedButton(onPressed: toggleSignUp, child: Text('Sign In')),
+          ElevatedButton(onPressed: toggleSignUp, child: Text('Sign Up')),
           SizedBox(height: 20),
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => SignInPage(),
                 ),
               );
             },
-            child: Text('Don\'t have an account? Sign In',
+            child: Text('Already have an account? Log In',
                 style: TextStyle(
                     color: Colors.purple,
                     decoration: TextDecoration.underline)),

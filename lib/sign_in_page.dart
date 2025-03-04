@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'orders.dart';
+import 'home.dart';
 import 'sign_up_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -23,8 +23,8 @@ class SignInPageState extends State<SignInPage> {
       if (userCredential.user != null) {
         // Navigate to the orders page
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => OrdersPage()));
+          Navigator.of(context)
+              .pushReplacement(MaterialPageRoute(builder: (context) => Home()));
         }
       }
     } catch (e) {

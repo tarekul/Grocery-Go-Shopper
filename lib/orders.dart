@@ -11,6 +11,7 @@ class OrderAppState extends State<OrdersPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   List orders = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -18,41 +19,57 @@ class OrderAppState extends State<OrdersPage> {
     getOrders();
   }
 
-  void getOrders() {
-    print("Attempting to get orders from Firestore...");
-    firestore.collection('orders').get().then((QuerySnapshot querySnapshot) {
+  Future<void> getOrders() async {
+    isLoading = true;
+    try {
+      QuerySnapshot querySnapshot = await firestore.collection('orders').get();
+      orders.clear();
       for (var doc in querySnapshot.docs) {
         var order = doc.data() as Map<String, dynamic>?;
-        if (order?['deleted_at'] == null) {
-          orders.add(order);
+        if (order?['deleted_at'] == null && order?['is_completed'] == false) {
+          orders.add({...order!, 'orderId': doc.id});
         }
       }
-      print("Orders fetched successfully: $orders");
+    } catch (error) {
+      print(error);
+    } finally {
+      isLoading = false;
       setState(() {});
-    }).catchError((error) {
-      print("Error fetching orders: $error");
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Orders'),
-      ),
-      body: orders.isNotEmpty
-          ? ListView.builder(
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                var order = orders[index];
-                return ListTile(
-                  title: Text(order['name']),
-                  subtitle: Text(order['email']),
-                );
-              })
-          : Center(
-              child: Text('No orders available'),
-            ),
-    );
+        appBar: AppBar(
+          title: const Text('Orders'),
+        ),
+        body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: getOrders,
+                child: orders.isNotEmpty
+                    ? ListView.builder(
+                        itemCount: orders.length,
+                        itemBuilder: (context, index) {
+                          var order = orders[index];
+                          return ListTile(
+                              title: Text(order["name"]),
+                              subtitle: Text(order['phone']),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ElevatedButton(
+                                      onPressed: () {}, child: Text('View')),
+                                  SizedBox(width: 10),
+                                  ElevatedButton(
+                                      onPressed: () {}, child: Text('Accept')),
+                                ],
+                              ));
+                        })
+                    : Center(
+                        child: Text('No orders available'),
+                      ),
+              ));
   }
 }

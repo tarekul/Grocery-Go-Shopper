@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -11,6 +13,7 @@ class OrderAppState extends State<OrdersPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   List orders = [];
+  Map<String, bool> acceptedOrders = {};
   bool isLoading = true;
 
   @override
@@ -26,7 +29,13 @@ class OrderAppState extends State<OrdersPage> {
       orders.clear();
       for (var doc in querySnapshot.docs) {
         var order = doc.data() as Map<String, dynamic>?;
-        if (order?['deleted_at'] == null && order?['is_completed'] == false) {
+        QuerySnapshot shopperSnapshot = await firestore
+            .collection('accepted-orders')
+            .where('order_id', isEqualTo: doc.id)
+            .get();
+        if (order?['deleted_at'] == null &&
+            order?['is_completed'] == false &&
+            shopperSnapshot.docs.isEmpty) {
           orders.add({...order!, 'orderId': doc.id});
         }
       }
@@ -35,6 +44,31 @@ class OrderAppState extends State<OrdersPage> {
     } finally {
       isLoading = false;
       setState(() {});
+    }
+  }
+
+  void acceptOrder(String orderId) async {
+    final user = FirebaseAuth.instance.currentUser!;
+    try {
+      var doc = await firestore
+          .collection('accepted-orders')
+          .where('order_id', isEqualTo: orderId)
+          .where('shopper_id', isEqualTo: user.uid)
+          .get();
+      if (doc.docs.isNotEmpty) {
+        return;
+      }
+      await firestore.collection('accepted-orders').doc().set({
+        'order_id': orderId,
+        'shopper_id': user.uid,
+        'is_completed': false,
+      });
+
+      setState(() {
+        acceptedOrders[orderId] = true;
+      });
+    } catch (error) {
+      print(error);
     }
   }
 
@@ -54,18 +88,38 @@ class OrderAppState extends State<OrdersPage> {
                         itemBuilder: (context, index) {
                           var order = orders[index];
                           return ListTile(
-                              title: Text(order["name"]),
-                              subtitle: Text(order['phone']),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ElevatedButton(
-                                      onPressed: () {}, child: Text('View')),
-                                  SizedBox(width: 10),
-                                  ElevatedButton(
-                                      onPressed: () {}, child: Text('Accept')),
-                                ],
-                              ));
+                            title: Text(order["orderId"],
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(order['name']),
+                                Text(order['phone']),
+                                Text(
+                                    "${order['address']}, ${order['city']}, ${order['zipcode']}"),
+                                Text("Total: \$${order['total_price']}"),
+                                Text("Total items: ${order['num_items']}"),
+                                Text(
+                                    "Ordered on: ${DateFormat('yyyy-MM-dd hh:mm a').format(order['created_at'].toDate())}"),
+                                SizedBox(height: 10),
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton(
+                                          onPressed: () {},
+                                          child: Text('View')),
+                                      SizedBox(width: 10),
+                                      acceptedOrders[order['orderId']] == true
+                                          ? Text('Accepted')
+                                          : ElevatedButton(
+                                              onPressed: () {
+                                                acceptOrder(order['orderId']);
+                                              },
+                                              child: Text('Accept')),
+                                    ])
+                              ],
+                            ),
+                          );
                         })
                     : Center(
                         child: Text('No orders available'),

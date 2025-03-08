@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import 'accepted_order_view.dart';
 
 class AcceptedOrdersPage extends StatefulWidget {
   const AcceptedOrdersPage({super.key});
@@ -83,28 +86,46 @@ class AcceptedOrdersAppState extends State<AcceptedOrdersPage> {
                         itemBuilder: (context, index) {
                           var order = orders[index];
                           return ListTile(
-                              title: Text(order["orderId"]),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(order['name']),
-                                  Text(order['phone']),
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ElevatedButton(
-                                      onPressed: () {}, child: Text('View')),
-                                  SizedBox(width: 10),
-                                  ElevatedButton(
-                                      onPressed: () {
-                                        removeOrder(
-                                            order['shopperAcceptedOrderId']);
-                                      },
-                                      child: Text('Cancel')),
-                                ],
-                              ));
+                            title: Text(order["orderId"]),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(order['name']),
+                                Text(order['phone']),
+                                Text(
+                                    "${order['address']}, ${order['city']}, ${order['zipcode']}"),
+                                Text("Total: \$${order['total_price']}"),
+                                Text("Total items: ${order['num_items']}"),
+                                Text(
+                                    "Ordered on: ${DateFormat('yyyy-MM-dd hh:mm a').format(order['created_at'].toDate())}"),
+                                SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  AcceptedOrderView(
+                                                order: order,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Text('View')),
+                                    SizedBox(width: 10),
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          removeOrder(
+                                              order['shopperAcceptedOrderId']);
+                                        },
+                                        child: Text('Cancel')),
+                                  ],
+                                )
+                              ],
+                            ),
+                          );
                         })
                     : Center(
                         child: Text('No orders available'),

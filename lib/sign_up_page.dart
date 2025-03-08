@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -13,8 +14,11 @@ class SignUpPage extends StatefulWidget {
 
 class SignUpPageState extends State<SignUpPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _firstnameController = TextEditingController();
+  final _lastnameController = TextEditingController();
 
   void toggleSignUp() async {
     try {
@@ -23,6 +27,14 @@ class SignUpPageState extends State<SignUpPage> {
               email: _emailController.text, password: _passwordController.text);
 
       if (userCredential.user != null) {
+        await firestore
+            .collection('shoppers')
+            .doc(userCredential.user!.uid)
+            .set({
+          'email': _emailController.text,
+          'firstname': _firstnameController.text,
+          'lastname': _lastnameController.text,
+        });
         // Navigate to the orders page
         if (mounted) {
           Navigator.of(context)
@@ -39,6 +51,9 @@ class SignUpPageState extends State<SignUpPage> {
           case 'weak-password':
             message =
                 'The password provided is too weak. Password should be at least 6 characters';
+            break;
+          case 'invalid-email':
+            message = 'The email provided is badly formatted';
             break;
           case 'email-already-in-use':
             message = 'The account already exists for that email.';
@@ -64,7 +79,25 @@ class SignUpPageState extends State<SignUpPage> {
       body: Center(
         child: Column(children: [
           SizedBox(
-            width: 300, // Adjust the width as needed
+            width: 300,
+            child: TextField(
+              controller: _firstnameController,
+              decoration: InputDecoration(
+                labelText: 'First Name',
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: _lastnameController,
+              decoration: InputDecoration(
+                labelText: 'Last Name',
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 300,
             child: TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -73,12 +106,13 @@ class SignUpPageState extends State<SignUpPage> {
             ),
           ),
           SizedBox(
-            width: 300, // Adjust the width as needed
+            width: 300,
             child: TextField(
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
               ),
+              obscureText: true,
             ),
           ),
           SizedBox(height: 20),

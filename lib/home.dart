@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'accepted_orders.dart';
 import 'orders.dart';
+import 'sign_in_page.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -44,6 +45,9 @@ class Home extends StatelessWidget {
           ElevatedButton(
               onPressed: () {
                 FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => SignInPage()),
+                );
               },
               child: Text('Sign Out')),
         ]),

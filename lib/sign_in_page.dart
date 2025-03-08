@@ -83,6 +83,7 @@ class SignInPageState extends State<SignInPage> {
               decoration: InputDecoration(
                 labelText: 'Password',
               ),
+              obscureText: true,
             ),
           ),
           SizedBox(height: 20),

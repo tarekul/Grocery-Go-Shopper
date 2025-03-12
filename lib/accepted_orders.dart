@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'accepted_order_view.dart';
+import 'order_details.dart';
 
 class AcceptedOrdersPage extends StatefulWidget {
   const AcceptedOrdersPage({super.key});
@@ -74,7 +74,7 @@ class AcceptedOrdersAppState extends State<AcceptedOrdersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text('Accepted Orders'),
+          title: Text('Accepted Orders'),
         ),
         body: isLoading
             ? Center(child: CircularProgressIndicator())
@@ -107,7 +107,7 @@ class AcceptedOrdersAppState extends State<AcceptedOrdersPage> {
                                           Navigator.of(context).push(
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  AcceptedOrderView(
+                                                  OrderDetailsPage(
                                                 order: order,
                                               ),
                                             ),

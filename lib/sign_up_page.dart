@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import 'home.dart';
@@ -15,6 +16,7 @@ class SignUpPage extends StatefulWidget {
 class SignUpPageState extends State<SignUpPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase database = FirebaseDatabase.instance;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _firstnameController = TextEditingController();
@@ -34,6 +36,14 @@ class SignUpPageState extends State<SignUpPage> {
           'email': _emailController.text,
           'firstname': _firstnameController.text,
           'lastname': _lastnameController.text,
+        });
+
+        await database
+            .ref('https://grocery-go-backend-default-rtdb.firebaseio.com/')
+            .set({
+          'grocery-shopper': {
+            userCredential.user!.uid: {'isAvailable': false}
+          }
         });
         // Navigate to the orders page
         if (mounted) {

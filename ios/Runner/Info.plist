@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>Google Maps</string>
+		<string>Apple Maps</string>
+		<string>Waze</string>
+	</array>
 </dict>
 </plist>

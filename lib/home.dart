@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -17,25 +19,33 @@ class HomeState extends State<Home> {
   bool isToggled = false;
   final database = FirebaseDatabase.instance;
   final auth = FirebaseAuth.instance;
+  StreamSubscription<DatabaseEvent>? userListener;
 
   @override
   void initState() {
     super.initState();
-    DatabaseReference ref = database.ref('grocery-shopper');
     var user = auth.currentUser;
     if (user != null) {
-      ref.child(user.uid).onValue.listen((event) {
-        setState(() => isToggled = event.snapshot.value['isAvailable']);
+      userListener = database
+          .ref('grocery-shopper')
+          .child(user.uid)
+          .onValue
+          .listen((event) {
+        setState(() {
+          final data = event.snapshot.value as Map?;
+          isToggled = data?['isAvailable'] ?? false;
+        });
       });
     }
   }
 
   Future<void> toggle(bool value) async {
-    DatabaseReference ref = database.ref('grocery-shopper');
-    var user = auth.currentUser;
-    if (user != null) {
+    if (auth.currentUser != null) {
       try {
-        await ref.child(user.uid).set({'isAvailable': value});
+        await database
+            .ref('grocery-shopper')
+            .child(auth.currentUser!.uid)
+            .set({'isAvailable': value});
         setState(() => isToggled = value);
       } catch (e) {
         print('Error writing to database: $e');
@@ -43,6 +53,25 @@ class HomeState extends State<Home> {
     } else {
       print('User is not logged in.');
     }
+  }
+
+  Future<void> signOut() async {
+    await database
+        .ref('grocery-shopper')
+        .child(auth.currentUser!.uid)
+        .set({'isAvailable': false});
+    await auth.signOut();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => SignInPage()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    userListener?.cancel();
+    super.dispose();
   }
 
   @override
@@ -87,10 +116,7 @@ class HomeState extends State<Home> {
           ),
           ElevatedButton(
               onPressed: () {
-                FirebaseAuth.instance.signOut();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => SignInPage()),
-                );
+                signOut();
               },
               child: Text('Sign Out')),
         ]),

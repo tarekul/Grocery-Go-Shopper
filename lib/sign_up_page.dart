@@ -21,9 +21,19 @@ class SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _firstnameController = TextEditingController();
   final _lastnameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   void toggleSignUp() async {
     try {
+      if (_emailController.text.isEmpty ||
+          _passwordController.text.isEmpty ||
+          _firstnameController.text.isEmpty ||
+          _lastnameController.text.isEmpty ||
+          _phoneController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Center(child: Text('All fields are required'))));
+        return;
+      }
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
               email: _emailController.text, password: _passwordController.text);
@@ -36,6 +46,7 @@ class SignUpPageState extends State<SignUpPage> {
           'email': _emailController.text,
           'firstname': _firstnameController.text,
           'lastname': _lastnameController.text,
+          'phone': _phoneController.text,
         });
 
         await database
@@ -112,6 +123,15 @@ class SignUpPageState extends State<SignUpPage> {
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: _phoneController,
+              decoration: InputDecoration(
+                labelText: 'Phone',
               ),
             ),
           ),

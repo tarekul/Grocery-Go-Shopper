@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import 'accepted_orders.dart';
+import 'completed_deliveries.dart';
 import 'orders.dart';
 import 'sign_in_page.dart';
 
@@ -111,6 +112,20 @@ class HomeState extends State<Home> {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Text('Show Accepted Orders'),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (context) => CompletedDeliveriesPage()),
+              );
+            },
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text('Show Completed Deliveries'),
               ),
             ),
           ),

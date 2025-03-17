@@ -109,6 +109,7 @@ class AcceptedOrdersAppState extends State<AcceptedOrdersPage> {
                                               builder: (context) =>
                                                   OrderDetailsPage(
                                                 order: order,
+                                                isComplete: false,
                                               ),
                                             ),
                                           );

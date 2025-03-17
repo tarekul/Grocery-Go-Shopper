@@ -82,8 +82,14 @@ class OrderAppState extends State<OrdersPage> {
             ? Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: getOrders,
-                child: orders.isNotEmpty
-                    ? ListView.builder(
+                child: orders.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          Center(child: Text('No orders available')),
+                        ],
+                      )
+                    : ListView.builder(
                         itemCount: orders.length,
                         itemBuilder: (context, index) {
                           var order = orders[index];
@@ -120,10 +126,6 @@ class OrderAppState extends State<OrdersPage> {
                               ],
                             ),
                           );
-                        })
-                    : Center(
-                        child: Text('No orders available'),
-                      ),
-              ));
+                        })));
   }
 }

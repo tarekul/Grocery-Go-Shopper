@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'home.dart';
 import 'sign_in_page.dart';
@@ -120,18 +121,22 @@ class SignUpPageState extends State<SignUpPage> {
           SizedBox(
             width: 300,
             child: TextField(
-              controller: _emailController,
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
               decoration: InputDecoration(
-                labelText: 'Email',
+                labelText: 'Phone',
               ),
             ),
           ),
           SizedBox(
             width: 300,
             child: TextField(
-              controller: _phoneController,
+              controller: _emailController,
               decoration: InputDecoration(
-                labelText: 'Phone',
+                labelText: 'Email',
               ),
             ),
           ),

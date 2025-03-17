@@ -63,46 +63,51 @@ class SignInPageState extends State<SignInPage> {
     - (BuildContext context) is an object that represents the location of the widget in the tree.
   */
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Sign In')),
-      body: Center(
-        child: Column(children: [
-          SizedBox(
-            width: 300, // Adjust the width as needed
-            child: TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 300, // Adjust the width as needed
-            child: TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-              ),
-              obscureText: true,
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(onPressed: toggleSignIn, child: Text('Sign In')),
-          SizedBox(height: 20),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => SignUpPage(),
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('Sign In')),
+        body: Center(
+          child: Column(children: [
+            SizedBox(
+              width: 300, // Adjust the width as needed
+              child: TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
                 ),
-              );
-            },
-            child: Text('Don\'t have an account? Sign up',
-                style: TextStyle(
-                    color: Colors.purple,
-                    decoration: TextDecoration.underline)),
-          )
-        ]),
+              ),
+            ),
+            SizedBox(
+              width: 300, // Adjust the width as needed
+              child: TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
+                obscureText: true,
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: toggleSignIn, child: Text('Sign In')),
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => SignUpPage(),
+                  ),
+                );
+              },
+              child: Text('Don\'t have an account? Sign up',
+                  style: TextStyle(
+                      color: Colors.purple,
+                      decoration: TextDecoration.underline)),
+            )
+          ]),
+        ),
       ),
     );
   }

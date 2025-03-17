@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   bool isToggled = false;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final database = FirebaseDatabase.instance;
   final auth = FirebaseAuth.instance;
   StreamSubscription<DatabaseEvent>? userListener;
@@ -42,6 +44,30 @@ class HomeState extends State<Home> {
 
   Future<void> toggle(bool value) async {
     if (auth.currentUser != null) {
+      var acceptedOrders = await firestore
+          .collection('accepted-orders')
+          .where('shopper_id', isEqualTo: auth.currentUser!.uid)
+          .where('is_completed', isEqualTo: false)
+          .get();
+
+      if (acceptedOrders.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('You have pending orders. Please complete them first.'),
+          ),
+        );
+
+        setState(() {
+          isToggled = false;
+        });
+
+        await Future.delayed(Duration(milliseconds: 300));
+        setState(() {
+          isToggled = !value;
+        });
+        return;
+      }
       try {
         await database
             .ref('grocery-shopper')
@@ -57,6 +83,21 @@ class HomeState extends State<Home> {
   }
 
   Future<void> signOut() async {
+    var acceptedOrders = await firestore
+        .collection('accepted-orders')
+        .where('shopper_id', isEqualTo: auth.currentUser!.uid)
+        .where('is_completed', isEqualTo: false)
+        .get();
+
+    if (acceptedOrders.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You have pending orders. Please complete them first.'),
+        ),
+      );
+      return;
+    }
+
     await database
         .ref('grocery-shopper')
         .child(auth.currentUser!.uid)

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -11,6 +12,7 @@ class OrdersPage extends StatefulWidget {
 
 class OrderAppState extends State<OrdersPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase database = FirebaseDatabase.instance;
 
   List orders = [];
   Map<String, bool> acceptedOrders = {};
@@ -63,6 +65,11 @@ class OrderAppState extends State<OrdersPage> {
         'shopper_id': user.uid,
         'is_completed': false,
       });
+
+      await database
+          .ref('grocery-shopper')
+          .child(user.uid)
+          .set({'isAvailable': true});
 
       setState(() {
         acceptedOrders[orderId] = true;

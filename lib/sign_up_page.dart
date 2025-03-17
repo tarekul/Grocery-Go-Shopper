@@ -96,77 +96,82 @@ class SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
-      body: Center(
-        child: Column(children: [
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _firstnameController,
-              decoration: InputDecoration(
-                labelText: 'First Name',
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _lastnameController,
-              decoration: InputDecoration(
-                labelText: 'Last Name',
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              decoration: InputDecoration(
-                labelText: 'Phone',
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-              ),
-              obscureText: true,
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(onPressed: toggleSignUp, child: Text('Sign Up')),
-          SizedBox(height: 20),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => SignInPage(),
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('Sign Up')),
+        body: Center(
+          child: Column(children: [
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _firstnameController,
+                decoration: InputDecoration(
+                  labelText: 'First Name',
                 ),
-              );
-            },
-            child: Text('Already have an account? Log In',
-                style: TextStyle(
-                    color: Colors.purple,
-                    decoration: TextDecoration.underline)),
-          )
-        ]),
+              ),
+            ),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _lastnameController,
+                decoration: InputDecoration(
+                  labelText: 'Last Name',
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Phone',
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
+                obscureText: true,
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: toggleSignUp, child: Text('Sign Up')),
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => SignInPage(),
+                  ),
+                );
+              },
+              child: Text('Already have an account? Log In',
+                  style: TextStyle(
+                      color: Colors.purple,
+                      decoration: TextDecoration.underline)),
+            )
+          ]),
+        ),
       ),
     );
   }

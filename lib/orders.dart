@@ -4,6 +4,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'order_details.dart';
+
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
   @override
@@ -49,7 +51,7 @@ class OrderAppState extends State<OrdersPage> {
     }
   }
 
-  void acceptOrder(String orderId) async {
+  void acceptOrder(String orderId, String customerId) async {
     final user = FirebaseAuth.instance.currentUser!;
     try {
       var doc = await firestore
@@ -63,6 +65,7 @@ class OrderAppState extends State<OrdersPage> {
       await firestore.collection('accepted-orders').doc().set({
         'order_id': orderId,
         'shopper_id': user.uid,
+        'customer_id': customerId,
         'is_completed': false,
       });
 
@@ -119,14 +122,25 @@ class OrderAppState extends State<OrdersPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       ElevatedButton(
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    OrderDetailsPage(
+                                                  order: order,
+                                                  isComplete: true,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                           child: Text('View')),
                                       SizedBox(width: 10),
                                       acceptedOrders[order['orderId']] == true
                                           ? Text('Accepted')
                                           : ElevatedButton(
                                               onPressed: () {
-                                                acceptOrder(order['orderId']);
+                                                acceptOrder(order['orderId'],
+                                                    order['customer_id'] ?? '');
                                               },
                                               child: Text('Accept')),
                                     ])

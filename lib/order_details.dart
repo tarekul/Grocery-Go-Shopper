@@ -136,32 +136,33 @@ class OrderDetailsPageState extends State<OrderDetailsPage> {
     });
   }
 
-  Future<void> deleteOrderItem(String orderId, int index) async {
-    double itemPrice = orderItems[index]['item']['price'];
-    itemPrice = double.parse(itemPrice.toStringAsFixed(2));
+  Future<void> deleteOrderItem(
+      String orderItemId, double itemPrice, int itemQuantity, int index) async {
+    final orderRef =
+        firestore.collection('orders').doc(widget.order['orderId']);
+    final itemRef = firestore.collection('order-items').doc(orderItemId);
 
     try {
-      await firestore.collection('order-items').doc(orderId).delete();
+      await firestore.runTransaction((transaction) async {
+        final orderSnapshot = await transaction.get(orderRef);
+        double currentTotalPrice = (orderSnapshot['total_price'] is int)
+            ? (orderSnapshot['total_price'] as int).toDouble()
+            : orderSnapshot['total_price'];
+        double newTotalPrice = double.parse(
+            (currentTotalPrice - itemPrice * itemQuantity).toStringAsFixed(2));
 
-      DocumentSnapshot orderSnapshot = await firestore
-          .collection('orders')
-          .doc(widget.order['orderId'])
-          .get();
-      double currentTotalPrice = orderSnapshot['total_price'];
+        transaction.delete(itemRef);
+        transaction.update(orderRef, {
+          'num_items': FieldValue.increment(-1),
+          'total_price': newTotalPrice
+        });
 
-      double newTotalPrice =
-          double.parse((currentTotalPrice - itemPrice).toStringAsFixed(2));
-
-      await firestore.collection('orders').doc(widget.order['orderId']).update({
-        'num_items': FieldValue.increment(-1),
-        'total_price': newTotalPrice,
-      });
-
-      setState(() {
-        orderItems.removeAt(index);
-        checkedStates.removeAt(index);
-        widget.order['num_items'] = widget.order['num_items'] - 1;
-        widget.order['total_price'] = newTotalPrice;
+        setState(() {
+          orderItems.removeAt(index);
+          checkedStates.removeAt(index);
+          widget.order['num_items'] = widget.order['num_items'] - 1;
+          widget.order['total_price'] = newTotalPrice;
+        });
       });
     } catch (e) {
       print(e);
@@ -209,10 +210,8 @@ class OrderDetailsPageState extends State<OrderDetailsPage> {
     try {
       await firestore.collection('order-items').add({
         'order_id': widget.order['orderId'],
-        'item': {
-          'name': itemName,
-          'price': itemPrice,
-        },
+        'name': itemName,
+        'price': itemPrice,
         'quantity': itemQuantity,
       });
 
@@ -220,7 +219,9 @@ class OrderDetailsPageState extends State<OrderDetailsPage> {
           .collection('orders')
           .doc(widget.order['orderId'])
           .get();
-      double currentTotalPrice = orderSnapshot['total_price'];
+      double currentTotalPrice = (orderSnapshot['total_price'] is int)
+          ? (orderSnapshot['total_price'] as int).toDouble()
+          : orderSnapshot['total_price'];
 
       double newTotalPrice = double.parse(
           (currentTotalPrice + itemPrice * itemQuantity).toStringAsFixed(2));
@@ -241,13 +242,11 @@ class OrderDetailsPageState extends State<OrderDetailsPage> {
         orderItems.add({
           'orderItemId': orderSnapshot.id,
           'order_id': widget.order['orderId'],
-          'item': {
-            'name': itemName,
-            'price': itemPrice,
-          },
+          'name': itemName,
+          'price': itemPrice,
           'quantity': itemQuantity,
         });
-        // checkedStates.add(false);
+
         widget.order['num_items'] = widget.order['num_items'] + 1;
         widget.order['total_price'] = newTotalPrice;
       });
@@ -257,191 +256,274 @@ class OrderDetailsPageState extends State<OrderDetailsPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    print(checkedStates);
     return Scaffold(
       appBar: AppBar(title: Text('Order Details')),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Order ID: ${widget.order['orderId']}'),
-                      Text('Name: ${widget.order['name']}'),
-                      Text('Phone: ${widget.order['phone']}'),
-                      Text(
-                          'Address: ${widget.order['address']} ${widget.order['city']} ${widget.order['zipcode']}'),
-                      Text('Total Price: ${widget.order['total_price']}'),
-                      Text('Total Items: ${widget.order['num_items']}'),
-                      Text(
-                          'Ordered On: ${DateFormat('yyyy-MM-dd hh:mm a').format(widget.order['created_at'].toDate())}'),
-                      SizedBox(height: 20),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Items',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            widget.isComplete
-                                ? SizedBox.shrink()
-                                : ElevatedButton(
-                                    onPressed: () {
-                                      edit();
-                                    },
-                                    child: Text(editMode ? 'Cancel' : 'Edit'))
-                          ]),
-                      SizedBox(height: 10),
-                      Column(
-                          children: orderItems.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        var item = entry.value;
+      body: SafeArea(
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Customer Info Container
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.only(bottom: 12),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer Info',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              SizedBox(height: 8),
+                              Text('Name: ${widget.order['name']}'),
+                              Text('Phone: ${widget.order['phone']}'),
+                              Text(
+                                  'Address: ${widget.order['address']} ${widget.order['city']} ${widget.order['zipcode']}'),
+                            ],
+                          ),
+                        ),
 
-                        return editMode
-                            ? Row(
+                        // Order Summary Container
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.only(bottom: 12),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE8F0FE),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Order Summary',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              SizedBox(height: 8),
+                              Text('Order ID: ${widget.order['orderId']}'),
+                              Text(
+                                  'Total Price: ${widget.order['total_price']}'),
+                              Text('Total Items: ${widget.order['num_items']}'),
+                              Text(
+                                  'Ordered On: ${DateFormat('yyyy-MM-dd hh:mm a').format(widget.order['created_at'].toDate())}'),
+                              SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.only(bottom: 12),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFFF1E6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Item List',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16)),
+                                    widget.isComplete
+                                        ? SizedBox.shrink()
+                                        : ElevatedButton(
+                                            onPressed: () {
+                                              edit();
+                                            },
+                                            child: Text(
+                                                editMode ? 'Cancel' : 'Edit'))
+                                  ]),
+                              SizedBox(height: 12),
+                              Column(
+                                children:
+                                    orderItems.asMap().entries.map((entry) {
+                                  int index = entry.key;
+                                  var item = entry.value;
+
+                                  return editMode
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.5,
+                                              child: Text(
+                                                '${item['name']} x ${item['quantity']}',
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 2,
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                widget.isComplete
+                                                    ? SizedBox.shrink()
+                                                    : IconButton(
+                                                        onPressed: () {
+                                                          deleteOrderItem(
+                                                              item[
+                                                                  'orderItemId'],
+                                                              item['price'],
+                                                              item['quantity'],
+                                                              index);
+                                                        },
+                                                        icon:
+                                                            Icon(Icons.delete)),
+                                              ],
+                                            ),
+                                          ],
+                                        )
+                                      : CheckboxListTile(
+                                          title: Text(
+                                              '${item['name']} x ${item['quantity']}'),
+                                          value: widget.isComplete
+                                              ? true
+                                              : checkedStates[index],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              checkedStates[index] = value!;
+                                            });
+                                          },
+                                        );
+                                }).toList(),
+                              )
+                            ],
+                          ),
+                        ),
+
+                        // Add Item Inputs
+                        editMode
+                            ? Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width * 0.5,
-                                    child: Text(
-                                      '${item['item']['name']} x ${item['quantity']}',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
+                                    child: TextField(
+                                      controller: itemNameController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Item Name',
+                                      ),
                                     ),
                                   ),
                                   Row(
                                     children: [
-                                      widget.isComplete
-                                          ? SizedBox.shrink()
-                                          : IconButton(
-                                              onPressed: () {
-                                                deleteOrderItem(
-                                                    item['orderItemId'], index);
-                                              },
-                                              icon: Icon(Icons.delete)),
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.3,
+                                        child: TextField(
+                                          controller: itemPriceController,
+                                          keyboardType: TextInputType.number,
+                                          inputFormatters: <TextInputFormatter>[
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'^\d*\.?\d{0,2}')),
+                                          ],
+                                          decoration: InputDecoration(
+                                            labelText: 'Item Price',
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.2,
+                                        child: TextField(
+                                          controller: itemQuantityController,
+                                          keyboardType: TextInputType.number,
+                                          inputFormatters: <TextInputFormatter>[
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'^\d*')),
+                                          ],
+                                          decoration: InputDecoration(
+                                            labelText: 'Quantity',
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
+                                  SizedBox(height: 20),
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        addItem();
+                                      },
+                                      child: Text('Add Item')),
                                 ],
                               )
-                            : CheckboxListTile(
-                                title: Text(
-                                    '${item['item']['name']} x ${item['quantity']}'),
-                                value: widget.isComplete
-                                    ? true
-                                    : checkedStates[index],
-                                onChanged: (value) {
-                                  setState(() {
-                                    checkedStates[index] = value!;
-                                  });
+                            : SizedBox.shrink(),
+
+                        // Proceed to delivery
+                        !isOrderComplete &&
+                                !editMode &&
+                                checkedStates
+                                    .every((element) => element == true)
+                            ? ElevatedButton(
+                                onPressed: () {
+                                  showMapSelectionDialog();
                                 },
-                              );
-                      }).toList()),
-                      SizedBox(height: 10),
-                      editMode
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.5,
-                                  child: TextField(
-                                    controller: itemNameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Item Name',
-                                    ),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
-                                      child: TextField(
-                                        controller: itemPriceController,
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: <TextInputFormatter>[
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'^\d*\.?\d{0,2}')),
-                                        ],
-                                        decoration: InputDecoration(
-                                          labelText: 'Item Price',
+                                child: Text('Proceed to delivery'))
+                            : SizedBox.shrink(),
+
+                        // Slide to complete
+                        SizedBox(height: 20),
+                        isOrderComplete
+                            ? Text('Order complete')
+                            : checkedStates
+                                        .every((element) => element == true) &&
+                                    !editMode
+                                ? SlideAction(
+                                    onSubmit: () {
+                                      completeOrder();
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text('Delivery completed'),
                                         ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.2,
-                                      child: TextField(
-                                        controller: itemQuantityController,
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: <TextInputFormatter>[
-                                          FilteringTextInputFormatter.allow(
-                                              RegExp(r'^\d*')),
-                                        ],
-                                        decoration: InputDecoration(
-                                          labelText: 'Quantity',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 20),
-                                ElevatedButton(
-                                    onPressed: () {
-                                      addItem();
+                                      );
                                     },
-                                    child: Text('Add Item')),
-                              ],
-                            )
-                          : SizedBox.shrink(),
-                      !isOrderComplete &&
-                              !editMode &&
-                              checkedStates.every((element) => element == true)
-                          ? ElevatedButton(
-                              onPressed: () {
-                                showMapSelectionDialog();
-                              },
-                              child: Text('Proceed to delivery'))
-                          : SizedBox.shrink(),
-                      SizedBox(height: 20),
-                      isOrderComplete
-                          ? Text('Order complete')
-                          : checkedStates.every((element) => element == true) &&
-                                  !editMode
-                              ? SlideAction(
-                                  onSubmit: () {
-                                    completeOrder();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Delivery completed'),
-                                      ),
-                                    );
-                                  },
-                                  outerColor: Colors.green,
-                                  innerColor: Colors.white,
-                                  sliderButtonIcon: Icon(Icons.arrow_forward,
-                                      color: Colors.green),
-                                  submittedIcon:
-                                      Icon(Icons.check, color: Colors.white),
-                                  child: Text('Complete Delivery',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
-                                )
-                              : SizedBox.shrink(),
-                    ],
+                                    outerColor: Colors.green,
+                                    innerColor: Colors.white,
+                                    sliderButtonIcon: Icon(Icons.arrow_forward,
+                                        color: Colors.green),
+                                    submittedIcon:
+                                        Icon(Icons.check, color: Colors.white),
+                                    child: Text('Complete Delivery',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold)),
+                                  )
+                                : SizedBox.shrink(),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
